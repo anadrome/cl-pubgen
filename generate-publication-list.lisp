@@ -49,9 +49,9 @@
             (setq last-year year)
             (:h2 year))
           (:p ; ToC citation format
-            ("~a." authors) (:br)
-              (:a :href abstract-url ("~a." title)) (:br)
-              (:em ("~a." venue)))
+            authors (:br)
+            (:a :href abstract-url title) (:br)
+            (:em venue))
 
           ; publication's abstract page
           (with-page-output abstract-url title
@@ -69,7 +69,9 @@
             (:h2 "Abstract")
             (:p (:raw (markdown (getf publication :abstract))))
             (:hr)
-            (:p ("Back to [publications](./)."))))))))
+            (:p ("Back to [publications](./)."))))))
+    (:hr)
+    (:p (:em (:a :href "../" *author-name*)))))
 
 
 (defun publication-venue (publication)
