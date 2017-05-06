@@ -50,7 +50,7 @@
             (:h2 year))
           (:p ; ToC citation format
             authors (:br)
-            (:a :href abstract-url title) (:br)
+            (:strong (:a :href abstract-url title) (:br))
             (:em venue))
 
           ; publication's abstract page
@@ -59,7 +59,7 @@
                                 (concatenate 'string "Proceedings of the " venue)
                                 venue)))
               (:p ; 'normal' citation format
-                ("~a (~a). [~a](~a)." authors year pdf-url title)
+                ("~a (~a). [**~a**](~a)." authors year pdf-url title)
                 (case publication-type ((inproceedings incollection) "In"))
                 ("*~a*~a~a."
                  full-venue
