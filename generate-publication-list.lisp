@@ -13,7 +13,7 @@
 ;(ql:quickload "multival-plist")
 ;(use-package :multival-plist)
 
-(defmacro with-page-output (filename title &body body)
+(defmacro with-page-output ((&key filename title additional-headers) &body body)
   `(with-open-file (*html* (make-pathname :directory *output-directory* :name ,filename)
                            :direction :output :if-exists :supersede)
      (with-html
@@ -22,6 +22,7 @@
          (:head
            (:meta :name "viewport" :content "width=device-width, initial-scale=1")
            (:link :rel "stylesheet" :href "style.css")
+           ,@additional-headers
            (:title (concatenate 'string ,title " | " *author-name*)))
          (:body
            (:h1 ,title)
@@ -29,12 +30,11 @@
 
 (defun generate-publication-list ()
   (setq *publications* (stable-sort *publications* #'> :key (lambda (x) (getf x :year))))
-  (with-page-output "index.html" "Publications"
+  (with-page-output (:filename "index.html" :title "Publications")
     (let ((last-year))
       (dolist (publication *publications*)
-        (let* ((basename (citation-key-to-basename (getf publication :citation-key)))
-               (abstract-filename (concatenate 'string basename "-abstract.html"))
-               (pdf-filename (concatenate 'string basename ".pdf"))
+        (let* ((abstract-filename (concatenate 'string (publication-basename publication) "-abstract.html"))
+               (pdf (publication-pdf publication))
                (publication-type (getf publication :publication-type))
                (authors (publication-authors publication))
                (title (getf publication :title))
@@ -54,25 +54,26 @@
             (:em venue))
 
           ; publication's abstract page
-          (with-page-output abstract-filename title
-            (let ((full-venue (if (eq publication-type 'inproceedings)
-                                (concatenate 'string "Proceedings of the " venue)
-                                venue)))
+          (let ((biblio-tags (biblio-tags publication))
+                (full-venue (publication-full-venue publication)))
+            (with-page-output (:filename abstract-filename :title title
+                               :additional-headers ((dolist (biblio-tag biblio-tags)
+                                                      (:meta :name (car biblio-tag) :content (cdr biblio-tag)))))
               (:p ; 'normal' citation format
                 ("~a (~a). " authors year)
-                (if (probe-file (make-pathname :directory *output-directory* :name pdf-filename))
-                  (:a :href pdf-filename (:strong ("~a." title)))
+                (if pdf
+                  (:a :href pdf (:strong ("~a." title)))
                   (:strong ("~a." title)))
                 (case publication-type ((inproceedings incollection) "In"))
                 ("*~a*~a~a."
                  full-venue
                  (format nil "~@[ ~a~]~@[(~a)~]" volume number)
-                 (format nil "~@[, pp. ~a~]" pages))))
-            ; TODO: generate :link's
-            (:h2 "Abstract")
-            (:p (:raw (markdown (getf publication :abstract))))
-            (:hr)
-            (:p ("Back to [publications](./)."))))))
+                 (format nil "~@[, pp. ~a~]" pages)))
+              ; TODO: generate :link's
+              (:h2 "Abstract")
+              (:p (:raw (markdown (getf publication :abstract))))
+              (:hr)
+              (:p ("Back to [publications](./).")))))))
     (:hr)
     (:p (:em (:a :href "../" *author-name*)))))
 
@@ -85,12 +86,39 @@
       (cdr (assoc venue *venues*))
       venue)))
 
+(defun publication-full-venue (publication)
+  (let ((venue (publication-venue publication)))
+    (if (eq (getf publication :publication-type) 'inproceedings)
+      (concatenate 'string "Proceedings of the " venue)
+      venue)))
+
 (defun publication-authors (publication)
   (format nil "~{~a~^, ~}" (getf publication :author)))
 
-(defun citation-key-to-basename (citation-key)
+(defun publication-basename (publication)
   ; follow bibtex2web's style
-  (substitute #\_ #\/ (substitute #\_ #\: citation-key)))
+  (substitute #\_ #\/ (substitute #\_ #\: (getf publication :citation-key))))
+
+(defun publication-pdf (publication)
+  (let ((filename (concatenate 'string (publication-basename publication) ".pdf")))
+    (if (probe-file (make-pathname :directory *output-directory* :name filename))
+      filename)))
+
+(defun biblio-tags (publication)
+  "Bibliographic info that Google Scholar wants in meta tags."
+  (let ((tags
+          `(("citation_title" . ,(getf publication :title))
+            ,@(mapcar (lambda (x) `("citation_author" . ,x)) (getf publication :author))
+            ("citation_publication_date" . ,(getf publication :year))
+            ,@(let ((full-venue (publication-full-venue publication)))
+                (ccase (getf publication :publication-type)
+                  (article `(("citation_journal_title" . ,full-venue)
+                             ("citation_volume" . ,(getf publication :volume))
+                             ("citation_issue" . ,(getf publication :number))))
+                  (inproceedings `(("citation_conference_title" . ,full-venue)))
+                  (incollection `(("citation_inbook_title" . ,full-venue)))))
+            ("citation_pdf_url" . ,(publication-pdf publication)))))
+    (remove nil tags :key #'cdr))) ; omit any missing fields
 
 (defun markdown (string)
   (nth-value 1 (cl-markdown:markdown string :stream nil)))
