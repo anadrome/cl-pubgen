@@ -10,8 +10,6 @@
 (ql:quickload "spinneret")
 (ql:quickload "spinneret/cl-markdown")
 (use-package :spinneret)
-;(ql:quickload "multival-plist")
-;(use-package :multival-plist)
 
 (defmacro with-page-output ((&key filename title additional-headers) &body body)
   `(with-open-file (*html* (make-pathname :directory *output-directory* :name ,filename)
@@ -55,7 +53,8 @@
 
           ; publication's abstract page
           (let ((biblio-tags (biblio-tags publication))
-                (full-venue (publication-full-venue publication)))
+                (full-venue (publication-full-venue publication))
+                (links (getf-all publication :link)))
             (with-page-output (:filename abstract-filename :title title
                                :additional-headers ((dolist (biblio-tag biblio-tags)
                                                       (:meta :name (car biblio-tag) :content (cdr biblio-tag)))))
@@ -69,9 +68,13 @@
                  full-venue
                  (format nil "~@[ ~a~]~@[(~a)~]" volume number)
                  (format nil "~@[, pp. ~a~]" pages)))
-              ; TODO: generate :link's
               (:h2 "Abstract")
               (:p (:raw (markdown (getf publication :abstract))))
+              (when links
+                (:h2 "Supplemental links")
+                (:ul
+                  (dolist (link links)
+                    (:li (:a :href (car link) (cdr link))))))
               (:hr)
               (:p ("Back to [publications](./).")))))))
     (:hr)
@@ -122,3 +125,8 @@
 
 (defun markdown (string)
   (nth-value 1 (cl-markdown:markdown string :stream nil)))
+
+(defun getf-all (plist key)
+  (loop for (k v) on plist by #'cddr
+        if (string= k key)
+        collect v))

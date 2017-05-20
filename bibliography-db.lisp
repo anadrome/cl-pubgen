@@ -2,9 +2,9 @@
 ; mjn, 2017
 
 (defvar *publications* '()
-  "Publications in the database. Each is a multival-plist containing
-  BibTeX-style fields plus the pseudo-fields :citation-key, :publication-type,
-  :category, and optionally one or more :link.")
+  "Publications in the database. Each is a possibly multivalued plist
+  containing BibTeX-style fields plus the pseudo-fields :citation-key,
+  :publication-type, :category, and optionally one or more :link.")
 
 (defvar *venues* '()
   "Recurring Publication venues (journals, workshops, and conferences) that we
