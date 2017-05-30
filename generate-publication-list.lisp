@@ -1,8 +1,10 @@
 ; Generate a publication list from the publications in *publications* (see bib.lisp)
 ; mjn, 2017
 
-; Note: Expects to find PDFs named in a way derived from the citation-key a la
-; bibtex2web.
+; Note: Like bibtex2web, does some magic with other files found in the output
+; directory named from the basename of the citation key (see function
+; publication-basename). Currently uses this to link a paper PDF and to show an
+; illustrative PNG/JPG image on the abstract page (in both cases, if present).
 
 (defvar *author-name* "Mark J. Nelson")
 (defvar *output-directory* '(:relative "publications"))
@@ -32,7 +34,8 @@
     (let ((last-year))
       (dolist (publication *publications*)
         (let* ((abstract-filename (concatenate 'string (publication-basename publication) "-abstract.html"))
-               (pdf (publication-pdf publication))
+               (pdf (auxiliary-file publication "pdf"))
+               (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
                (publication-type (getf publication :publication-type))
                (authors (publication-authors publication))
                (title (getf publication :title))
@@ -68,6 +71,8 @@
                  full-venue
                  (format nil "~@[ ~a~]~@[(~a)~]" volume number)
                  (format nil "~@[, pp. ~a~]" pages)))
+              (if image
+                (:p (:img :src image :class "abstract-image")))
               (:h2 "Abstract")
               (:p (:raw (markdown (getf publication :abstract))))
               (when links
@@ -102,8 +107,8 @@
   ; follow bibtex2web's style
   (substitute #\_ #\/ (substitute #\_ #\: (getf publication :citation-key))))
 
-(defun publication-pdf (publication)
-  (let ((filename (concatenate 'string (publication-basename publication) ".pdf")))
+(defun auxiliary-file (publication extension)
+  (let ((filename (concatenate 'string (publication-basename publication) "." extension)))
     (if (probe-file (make-pathname :directory *output-directory* :name filename))
       filename)))
 
@@ -120,7 +125,7 @@
                              ("citation_issue" . ,(getf publication :number))))
                   (inproceedings `(("citation_conference_title" . ,full-venue)))
                   (incollection `(("citation_inbook_title" . ,full-venue)))))
-            ("citation_pdf_url" . ,(publication-pdf publication)))))
+            ("citation_pdf_url" . ,(auxiliary-file publication "pdf")))))
     (remove nil tags :key #'cdr))) ; omit any missing fields
 
 (defun markdown (string)
