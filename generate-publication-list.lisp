@@ -49,7 +49,7 @@
           (unless (eql year last-year)
             (setq last-year year)
             (:h2 year))
-          (:p ; ToC citation format
+          (:p :class "toc-citation" ; ToC citation format
             authors (:br)
             (:strong (:a :href abstract-filename title) (:br))
             (:em venue))
@@ -61,7 +61,7 @@
             (with-page-output (:filename abstract-filename :title title
                                :additional-headers ((dolist (biblio-tag biblio-tags)
                                                       (:meta :name (car biblio-tag) :content (cdr biblio-tag)))))
-              (:p ; 'normal' citation format
+              (:p :class "abstract-citation" ; 'normal' citation format
                 ("~a (~a). " authors year)
                 (if pdf
                   (:a :href pdf (:strong ("~a." title)))
