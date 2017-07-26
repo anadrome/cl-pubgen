@@ -16,17 +16,18 @@
 (defmacro with-page-output ((&key filename title additional-headers) &body body)
   `(with-open-file (*html* (make-pathname :directory *output-directory* :name ,filename)
                            :direction :output :if-exists :supersede)
-     (with-html
-       (:doctype)
-       (:html
-         (:head
-           (:meta :name "viewport" :content "width=device-width, initial-scale=1")
-           (:link :rel "stylesheet" :href "style.css")
-           ,@additional-headers
-           (:title (concatenate 'string ,title " | " *author-name*)))
-         (:body
-           (:h1 ,title)
-           ,@body)))))
+     (let ((*print-pretty* t))
+       (with-html
+         (:doctype)
+         (:html
+           (:head
+             (:meta :name "viewport" :content "width=device-width, initial-scale=1")
+             (:link :rel "stylesheet" :href "style.css")
+             ,@additional-headers
+             (:title (concatenate 'string ,title " | " *author-name*)))
+           (:body
+             (:h1 ,title)
+             ,@body))))))
 
 (defun generate-publication-list ()
   (setq *publications* (stable-sort *publications* #'> :key (lambda (x) (getf x :year))))
