@@ -44,6 +44,7 @@
                (volume (getf publication :volume))
                (number (getf publication :number))
                (year (getf publication :year))
+               (publisher (getf publication :publisher))
                (pages (getf publication :pages)))
 
           ; publication's ToC entry
@@ -53,7 +54,7 @@
           (:p :class "toc-citation" ; ToC citation format
             authors (:br)
             (:strong (:a :href abstract-filename title) (:br))
-            (:em venue))
+            (:em (or venue publisher)))
 
           ; publication's abstract page
           (let ((biblio-tags (biblio-tags publication))
@@ -67,11 +68,15 @@
                 (if pdf
                   (:a :href pdf (:strong ("~a." title)))
                   (:strong ("~a." title)))
+                " "
                 (case publication-type ((inproceedings incollection) "In"))
-                ("*~a*~a~a."
-                 full-venue
-                 (format nil "~@[ ~a~]~@[(~a)~]" volume number)
-                 (format nil "~@[, pp. ~a~]" pages)))
+                (ccase publication-type
+                  ((inproceedings incollection article)
+                   ("*~a*~a~a."
+                    full-venue
+                    (format nil "~@[ ~a~]~@[(~a)~]" volume number)
+                    (format nil "~@[, pp. ~a~]" pages)))
+                  ((book) ("~a." publisher))))
               (if image
                 (:p (:img :src image :class "abstract-image")))
               (:h2 "Abstract")
@@ -88,7 +93,7 @@
 
 
 (defun publication-venue (publication)
-  (let* ((venue (ccase (getf publication :publication-type)
+  (let* ((venue (case (getf publication :publication-type)
                  ((inproceedings incollection) (getf publication :booktitle))
                  (article (getf publication :journal)))))
     (if (symbolp venue)
@@ -120,7 +125,7 @@
             ,@(mapcar (lambda (x) `("citation_author" . ,x)) (getf publication :author))
             ("citation_publication_date" . ,(getf publication :year))
             ,@(let ((full-venue (publication-full-venue publication)))
-                (ccase (getf publication :publication-type)
+                (case (getf publication :publication-type)
                   (article `(("citation_journal_title" . ,full-venue)
                              ("citation_volume" . ,(getf publication :volume))
                              ("citation_issue" . ,(getf publication :number))))
