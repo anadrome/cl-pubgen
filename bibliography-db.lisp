@@ -1,6 +1,8 @@
 ; Simple bibliography database
 ; mjn, 2017
 
+(ql:quickload :str)
+
 (defvar *publications* '()
   "Publications in the database. Each is a possibly multivalued plist
   containing BibTeX-style fields plus the pseudo-fields :citation-key,
@@ -26,3 +28,25 @@
   as 'IEEE Conference on Computational Intelligence and Games', and will be
   appropriately expanded."
   (push (cons symbolic-name string-name) *venues*))
+
+
+; utility functions
+
+(defun publication-venue (publication)
+  (let* ((venue (case (getf publication :publication-type)
+                 ((inproceedings incollection) (getf publication :booktitle))
+                 (article (getf publication :journal)))))
+    (if (symbolp venue)
+      (cdr (assoc venue *venues*))
+      venue)))
+
+(defun publication-full-venue (publication)
+  (let ((venue (publication-venue publication)))
+    (if (eq (getf publication :publication-type) 'inproceedings)
+      (str:concat "Proceedings of the " venue)
+      venue)))
+
+(defun getf-all (plist key)
+  (loop for (k v) on plist by #'cddr
+        if (string= k key)
+        collect v))

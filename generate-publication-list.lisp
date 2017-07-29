@@ -3,14 +3,15 @@
 
 ; Note: Like bibtex2web, does some magic with other files found in the output
 ; directory named from the basename of the citation key (see function
-; publication-basename). Currently uses this to link a paper PDF and to show an
+; html-basename). Currently uses this to link a paper PDF and to show an
 ; illustrative PNG/JPG image on the abstract page (in both cases, if present).
 
 (defvar *author-name* "Mark J. Nelson")
 (defvar *output-directory* '(:relative "publications"))
 
-(ql:quickload "spinneret")
-(ql:quickload "spinneret/cl-markdown")
+(ql:quickload :str)
+(ql:quickload :spinneret)
+(ql:quickload :spinneret/cl-markdown)
 (use-package :spinneret)
 
 (defmacro with-page-output ((&key filename title additional-headers) &body body)
@@ -24,7 +25,7 @@
              (:meta :name "viewport" :content "width=device-width, initial-scale=1")
              (:link :rel "stylesheet" :href "style.css")
              ,@additional-headers
-             (:title (concatenate 'string ,title " | " *author-name*)))
+             (:title (str:concat ,title " | " *author-name*)))
            (:body
              (:h1 ,title)
              ,@body))))))
@@ -34,34 +35,26 @@
   (with-page-output (:filename "index.html" :title "Publications")
     (let ((last-year))
       (dolist (publication *publications*)
-        (let* ((abstract-filename (concatenate 'string (publication-basename publication) "-abstract.html"))
-               (pdf (auxiliary-file publication "pdf"))
-               (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
-               (publication-type (getf publication :publication-type))
-               (authors (publication-authors publication))
-               (title (getf publication :title))
-               (venue (publication-venue publication))
-               (volume (getf publication :volume))
-               (number (getf publication :number))
-               (year (getf publication :year))
-               (publisher (getf publication :publisher))
-               (pages (getf publication :pages)))
-
-          ; publication's ToC entry
-          (unless (eql year last-year)
-            (setq last-year year)
-            (:h2 year))
-          (:p :class "toc-citation" ; ToC citation format
-            authors (:br)
-            (:strong (:a :href abstract-filename title) (:br))
-            (:em (or venue publisher)))
-
-          ; publication's abstract page
-          (let ((biblio-tags (biblio-tags publication))
-                (full-venue (publication-full-venue publication))
+        (destructuring-bind (&key publication-type title volume number year publisher pages &allow-other-keys) publication
+          (let ((abstract-filename (str:concat (html-basename publication) "-abstract.html"))
+                (pdf (auxiliary-file publication "pdf"))
+                (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
+                (authors (str:join ", " (getf publication :author)))
+                (venue (publication-venue publication))
                 (links (getf-all publication :link)))
+
+            ; publication's ToC entry
+            (unless (eql year last-year)
+              (setq last-year year)
+              (:h2 year))
+            (:p :class "toc-citation" ; ToC citation format
+                authors (:br)
+                (:strong (:a :href abstract-filename title) (:br))
+                (:em (or venue publisher)))
+
+            ; publication's abstract page
             (with-page-output (:filename abstract-filename :title title
-                               :additional-headers ((dolist (biblio-tag biblio-tags)
+                               :additional-headers ((dolist (biblio-tag (biblio-tags publication))
                                                       (:meta :name (car biblio-tag) :content (cdr biblio-tag)))))
               (:p :class "abstract-citation" ; 'normal' citation format
                 ("~a (~a). " authors year)
@@ -73,7 +66,7 @@
                 (ccase publication-type
                   ((inproceedings incollection article)
                    ("*~a*~a~a."
-                    full-venue
+                    (publication-full-venue publication)
                     (format nil "~@[ ~a~]~@[(~a)~]" volume number)
                     (format nil "~@[, pp. ~a~]" pages)))
                   ((book) ("~a." publisher))))
@@ -92,29 +85,12 @@
     (:p (:em (:a :href "../" *author-name*)))))
 
 
-(defun publication-venue (publication)
-  (let* ((venue (case (getf publication :publication-type)
-                 ((inproceedings incollection) (getf publication :booktitle))
-                 (article (getf publication :journal)))))
-    (if (symbolp venue)
-      (cdr (assoc venue *venues*))
-      venue)))
-
-(defun publication-full-venue (publication)
-  (let ((venue (publication-venue publication)))
-    (if (eq (getf publication :publication-type) 'inproceedings)
-      (concatenate 'string "Proceedings of the " venue)
-      venue)))
-
-(defun publication-authors (publication)
-  (format nil "~{~a~^, ~}" (getf publication :author)))
-
-(defun publication-basename (publication)
+(defun html-basename (publication)
   ; follow bibtex2web's style
   (substitute #\_ #\/ (substitute #\_ #\: (getf publication :citation-key))))
 
 (defun auxiliary-file (publication extension)
-  (let ((filename (concatenate 'string (publication-basename publication) "." extension)))
+  (let ((filename (str:concat (html-basename publication) "." extension)))
     (if (probe-file (make-pathname :directory *output-directory* :name filename))
       filename)))
 
@@ -136,8 +112,3 @@
 
 (defun markdown (string)
   (nth-value 1 (cl-markdown:markdown string :stream nil)))
-
-(defun getf-all (plist key)
-  (loop for (k v) on plist by #'cddr
-        if (string= k key)
-        collect v))
