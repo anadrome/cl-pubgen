@@ -35,7 +35,7 @@
   (with-page-output (:filename "index.html" :title "Publications")
     (let ((last-year))
       (dolist (publication *publications*)
-        (destructuring-bind (&key publication-type title volume number year publisher pages &allow-other-keys) publication
+        (destructuring-bind (&key publication-type title volume number year publisher pages note &allow-other-keys) publication
           (let ((abstract-filename (str:concat (html-basename publication) "-abstract.html"))
                 (pdf (auxiliary-file publication "pdf"))
                 (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
@@ -69,7 +69,8 @@
                     (publication-full-venue publication)
                     (format nil "~@[ ~a~]~@[(~a)~]" volume number)
                     (format nil "~@[, pp. ~a~]" pages)))
-                  ((book) ("~a." publisher))))
+                  ((book) ("~a." publisher)))
+                note)
               (if image
                 (:p (:img :src image :class "abstract-image")))
               (:h2 "Abstract")
