@@ -1,5 +1,5 @@
 ; Simple bibliography database
-; mjn, 2017
+; mjn, 2017-2018
 
 (ql:quickload :str)
 
@@ -45,6 +45,9 @@
     (if (eq (getf publication :publication-type) 'inproceedings)
       (str:concat "Proceedings of the " venue)
       venue)))
+
+(defun publication-authors (publication)
+  (str:join ", " (getf publication :author)))
 
 (defun getf-all (plist key)
   (loop for (k v) on plist by #'cddr
