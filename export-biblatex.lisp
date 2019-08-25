@@ -24,15 +24,15 @@
               ((journal)
                (append
                  (list :author author)
-                 (filter-plist publication '(:title :journal :volume :number :pages :year :note))))
+                 (filter-plist publication '(:title :journal :volume :number :pages :year :doi :note))))
             ((conference workshop demo collection) 
              (append
                (list :author author :booktitle (publication-full-venue publication))
-               (filter-plist publication '(:title :pages :year :publisher :note))))
+               (filter-plist publication '(:title :pages :year :publisher :doi :note))))
             ((book)
              (append
                (list :author author)
-               (filter-plist publication '(:title :year :publisher :note)))))))
+               (filter-plist publication '(:title :year :publisher :isbn :note)))))))
         out))))
 
 (defun biblatex-entry (citation-key publication-type fields)

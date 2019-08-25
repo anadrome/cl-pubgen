@@ -47,7 +47,7 @@
 
 (defun generate-abstract-pages ()
   (dolist (publication *publications*)
-    (destructuring-bind (&key publication-type title volume number year publisher pages note &allow-other-keys) publication
+    (destructuring-bind (&key publication-type title volume number year publisher pages doi isbn note &allow-other-keys) publication
       (let ((pdf (auxiliary-file publication "pdf"))
             (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
             (links (getf-all publication :link)))
@@ -68,6 +68,10 @@
                 (format nil "~@[ ~a~]~@[(~a)~]" volume number)
                 (format nil "~@[, pp. ~a~]" pages)))
               ((book) ("~a." publisher)))
+            (when doi
+              (:a :href (str:concat "https://doi.org/" doi) "DOI: " doi))
+            (when isbn
+              ("ISBN: ~a" isbn))
             note)
           (if image
             (:p (:img :src image :class "abstract-image")))
