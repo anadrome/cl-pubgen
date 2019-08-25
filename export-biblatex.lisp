@@ -1,5 +1,5 @@
 ; Export publications to biblatex
-; mjn, 2017
+; mjn, 2017-2019
 
 (defvar *output-file* "my-papers.bib")
 
@@ -10,15 +10,22 @@
     (dolist (publication (reverse *publications*))
       (princ
         (biblatex-entry
+          ; pass through citation key
           (getf publication :citation-key)
-          (getf publication :publication-type)
+          ; map our publication-types to biblatex ones
+          (ecase (getf publication :publication-type)
+            ((conference workshop demo) 'inproceedings)
+            (collection 'incollection)
+            (journal 'article)
+            (book 'book))
+          ; filter relevant fields to pass through to biblatex, and format a few of them (e.g. "and" between authors)
           (let ((author (str:join " and " (getf publication :author))))
             (ecase (getf publication :publication-type)
-              ((article)
+              ((journal)
                (append
                  (list :author author)
                  (filter-plist publication '(:title :journal :volume :number :pages :year :note))))
-            ((inproceedings incollection) 
+            ((conference workshop demo collection) 
              (append
                (list :author author :booktitle (publication-full-venue publication))
                (filter-plist publication '(:title :pages :year :publisher :note))))

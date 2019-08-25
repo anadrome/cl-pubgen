@@ -1,5 +1,5 @@
 ; Generate a publication list
-; mjn, 2017-2018
+; mjn, 2017-2019
 
 ; Note: Like bibtex2web, does some magic with other files found in the output
 ; directory named from the basename of the citation key (see function
@@ -60,9 +60,9 @@
               (:a :href pdf (:strong ("~a." title)))
               (:strong ("~a." title)))
             " "
-            (case publication-type ((inproceedings incollection) "In"))
+            (case publication-type ((conference workshop demo collection) "In"))
             (ccase publication-type
-              ((inproceedings incollection article)
+              ((conference workshop demo collection journal)
                ("*~a*~a~a."
                 (publication-full-venue publication)
                 (format nil "~@[ ~a~]~@[(~a)~]" volume number)
@@ -105,11 +105,11 @@
             ("citation_publication_date" . ,(getf publication :year))
             ,@(let ((full-venue (publication-full-venue publication)))
                 (case (getf publication :publication-type)
-                  (article `(("citation_journal_title" . ,full-venue)
+                  (journal `(("citation_journal_title" . ,full-venue)
                              ("citation_volume" . ,(getf publication :volume))
                              ("citation_issue" . ,(getf publication :number))))
-                  (inproceedings `(("citation_conference_title" . ,full-venue)))
-                  (incollection `(("citation_inbook_title" . ,full-venue)))))
+                  ((conference workshop demo) `(("citation_conference_title" . ,full-venue)))
+                  (collection `(("citation_inbook_title" . ,full-venue)))))
             ("citation_pdf_url" . ,(auxiliary-file publication "pdf")))))
     (remove nil tags :key #'cdr))) ; omit any missing fields
 

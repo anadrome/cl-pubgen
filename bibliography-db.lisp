@@ -1,5 +1,5 @@
 ; Simple bibliography database
-; mjn, 2017-2018
+; mjn, 2017-2019
 
 (ql:quickload :str)
 
@@ -12,12 +12,15 @@
   "Recurring Publication venues (journals, workshops, and conferences) that we
   know about. Alist of (symbolic-name . string-name).")
 
+(defvar *categories* '()
+  "Paper categories. Alist of (symbolic-name . string-name).")
+
 (defun defpub (citation-key publication-type &rest bibliographic-data &key &allow-other-keys)
-  "Define a new publication. publication-type is a BibTeX publication type
-  (e.g. 'inproceedings, 'article), and citation-key is a BibTeX-style citation
+  "Define a new publication. publication-type is one of: conference, workshop,
+  demo, collection, journal, book.  citation-key is a BibTeX-style citation
   key. The rest of the arguments are keyword parameters specifying the
-  bibliographic data, such as :author, :title, etc., also named as in BibTeX.
-  In addition, there should be a :category and optionally one or more
+  bibliographic data, such as :author, :title, etc., named as in BibTeX. In
+  addition, there should be a :category and optionally one or more
   :link (text . url)."
   (push (list* :citation-key citation-key :publication-type publication-type bibliographic-data) *publications*))
 
@@ -29,22 +32,24 @@
   appropriately expanded."
   (push (cons symbolic-name string-name) *venues*))
 
+(defun defcat (symbolic-name string-name)
+  (push (cons symbolic-name string-name) *categories*))
 
 ; utility functions
 
 (defun publication-venue (publication)
   (let* ((venue (case (getf publication :publication-type)
-                 ((inproceedings incollection) (getf publication :booktitle))
-                 (article (getf publication :journal)))))
+                 ((conference workshop demo collection) (getf publication :booktitle))
+                 (journal (getf publication :journal)))))
     (if (symbolp venue)
       (cdr (assoc venue *venues*))
       venue)))
 
 (defun publication-full-venue (publication)
   (let ((venue (publication-venue publication)))
-    (if (eq (getf publication :publication-type) 'inproceedings)
-      (str:concat "Proceedings of the " venue)
-      venue)))
+    (case (getf publication :publication-type)
+      ((conference workshop demo) (str:concat "Proceedings of the " venue))
+      (t venue))))
 
 (defun publication-authors (publication)
   (str:join ", " (getf publication :author)))
