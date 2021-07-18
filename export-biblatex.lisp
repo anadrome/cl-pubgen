@@ -1,12 +1,14 @@
 ; Export publications to biblatex
-; mjn, 2017-2019
+; mjn, 2017-2021
 
-(defvar *output-file* "my-papers.bib")
+(load "configuration.lisp")
+(load "bibliography-db.lisp")
+(load "my-papers.lisp")
 
 (ql:quickload :str)
 
 (defun export-biblatex ()
-  (with-open-file (out *output-file* :direction :output :if-exists :supersede)
+  (with-open-file (out *biblatex-output-file* :direction :output :if-exists :supersede)
     (dolist (publication (reverse *publications*))
       (princ
         (biblatex-entry

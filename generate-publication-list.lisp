@@ -1,37 +1,20 @@
 ; Generate a publication list
-; mjn, 2017-2019
+; mjn, 2017-2021
 
 ; Note: Like bibtex2web, does some magic with other files found in the output
 ; directory named from the basename of the citation key (see function
 ; html-basename). Currently uses this to link a paper PDF and to show an
 ; illustrative PNG/JPG image on the abstract page (in both cases, if present).
 
-(defvar *author-name* "Mark J. Nelson")
-(defvar *output-directory* '(:relative "publications"))
+(load "configuration.lisp")
+(load "util.lisp")
+(load "bibliography-db.lisp")
+(load *bibliography-file*)
 
 (ql:quickload :str)
-(ql:quickload :spinneret)
-(ql:quickload :spinneret/cl-markdown)
-(use-package :spinneret)
-
-(defmacro with-page-output ((&key filename title additional-headers) &body body)
-  `(with-open-file (*html* (make-pathname :directory *output-directory* :name ,filename)
-                           :direction :output :if-exists :supersede)
-     (let ((*print-pretty* t))
-       (with-html
-         (:doctype)
-         (:html
-           (:head
-             (:meta :name "viewport" :content "width=device-width, initial-scale=1")
-             (:link :rel "stylesheet" :href "style.css")
-             ,@additional-headers
-             (:title (str:concat ,title " | " *author-name*)))
-           (:body
-             (:h1 ,title)
-             ,@body))))))
 
 (defun generate-toc ()
-  (with-page-output (:filename "index.html" :title "Publications")
+  (with-page-output (:filename "index.html" :title "Publications" :directory *publication-output-directory*)
     (let ((last-year))
       (dolist (publication (stable-sort (copy-list *publications*) #'> :key (lambda (x) (getf x :year))))
         (destructuring-bind (&key title year publisher &allow-other-keys) publication
@@ -51,7 +34,7 @@
       (let ((pdf (auxiliary-file publication "pdf"))
             (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
             (links (getf-all publication :link)))
-        (with-page-output (:filename (abstract-filename publication) :title title
+        (with-page-output (:filename (abstract-filename publication) :title title :directory *publication-output-directory*
                            :additional-headers ((dolist (biblio-tag (biblio-tags publication))
                                                   (:meta :name (car biblio-tag) :content (cdr biblio-tag)))))
           (:p :class "abstract-citation" ; 'normal' citation format
@@ -98,7 +81,7 @@
 
 (defun auxiliary-file (publication extension)
   (let ((filename (str:concat (html-basename publication) "." extension)))
-    (if (probe-file (make-pathname :directory *output-directory* :name filename))
+    (if (probe-file (make-pathname :directory *publication-output-directory* :name filename))
       filename)))
 
 (defun biblio-tags (publication)
@@ -117,5 +100,3 @@
             ("citation_pdf_url" . ,(auxiliary-file publication "pdf")))))
     (remove nil tags :key #'cdr))) ; omit any missing fields
 
-(defun markdown (string)
-  (nth-value 1 (cl-markdown:markdown string :stream nil)))
