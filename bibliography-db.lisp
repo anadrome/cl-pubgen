@@ -1,5 +1,5 @@
 ; Simple bibliography database
-; mjn, 2017-2019
+; mjn, 2017-2022
 
 (ql:quickload :str)
 
@@ -40,7 +40,7 @@
 (defun publication-venue (publication)
   (let* ((venue (case (getf publication :publication-type)
                  ((conference workshop demo collection) (getf publication :booktitle))
-                 (journal (getf publication :journal)))))
+                 ((journal preprint) (getf publication :journal)))))
     (if (symbolp venue)
       (cdr (assoc venue *venues*))
       venue)))

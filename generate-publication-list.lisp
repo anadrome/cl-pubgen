@@ -1,5 +1,5 @@
 ; Generate a publication list
-; mjn, 2017-2021
+; mjn, 2017-2022
 
 ; Note: Like bibtex2web, does some magic with other files found in the output
 ; directory named from the basename of the citation key (see function
@@ -45,7 +45,7 @@
             " "
             (case publication-type ((conference workshop demo collection) "In"))
             (ccase publication-type
-              ((conference workshop demo collection journal)
+              ((conference workshop demo collection journal preprint)
                ("*~a*~a~a."
                 (publication-full-venue publication)
                 (format nil "~@[ ~a~]~@[(~a)~]" volume number)
