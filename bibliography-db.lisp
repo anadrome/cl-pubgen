@@ -1,4 +1,4 @@
-; Simple bibliography database
+; Simple bibliography and projects database
 ; mjn, 2017-2022
 
 (ql:quickload :str)
@@ -15,10 +15,13 @@
 (defvar *categories* '()
   "Paper categories. Alist of (symbolic-name . string-name).")
 
+(defvar *projects* '()
+  "Projects. Plist with keys: name, blurb, years, people, funding, papers.")
+
 (defun defpub (citation-key publication-type &rest bibliographic-data &key &allow-other-keys)
   "Define a new publication. publication-type is one of: conference, workshop,
-  demo, collection, journal, book.  citation-key is a BibTeX-style citation
-  key. The rest of the arguments are keyword parameters specifying the
+  demo, collection, journal, preprint, book. citation-key is a BibTeX-style
+  citation key. The rest of the arguments are keyword parameters specifying the
   bibliographic data, such as :author, :title, etc., named as in BibTeX. In
   addition, there should be a :category and optionally one or more
   :link (text . url)."
@@ -34,6 +37,9 @@
 
 (defun defcat (symbolic-name string-name)
   (push (cons symbolic-name string-name) *categories*))
+
+(defun defproject (name &rest project-data &key &allow-other-keys)
+  (push (list* :name name project-data) *projects*))
 
 ; utility functions
 

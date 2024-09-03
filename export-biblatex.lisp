@@ -1,5 +1,5 @@
 ; Export publications to biblatex
-; mjn, 2017-2021
+; mjn, 2017-2023
 
 (load "configuration.lisp")
 (load "bibliography-db.lisp")

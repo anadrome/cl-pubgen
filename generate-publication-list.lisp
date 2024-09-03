@@ -1,5 +1,5 @@
-; Generate a publication list
-; mjn, 2017-2022
+; Generate an HTML publication list
+; mjn, 2017-2023
 
 ; Note: Like bibtex2web, does some magic with other files found in the output
 ; directory named from the basename of the citation key (see function
