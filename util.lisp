@@ -5,7 +5,7 @@
 (ql:quickload :spinneret/cl-markdown)
 (ql:quickload :str)
 
-(defmacro with-page-output ((&key filename title directory additional-headers) &body body)
+(defmacro with-page-output ((&key filename title subtitle directory additional-headers) &body body)
   `(with-open-file (spinneret:*html* (make-pathname :directory ,directory :name ,filename)
                                      :direction :output :if-exists :supersede)
      (let ((*print-pretty* t))
@@ -16,7 +16,9 @@
              (:meta :name "viewport" :content "width=device-width, initial-scale=1")
              (:link :rel "stylesheet" :href "style.css")
              ,@additional-headers
-           (:title (str:concat ,title " | " *author-name*)))
+             (if ,subtitle
+               (:title (str:concat ,title " | " ,subtitle))
+               (:title ,title)))
            (:body
              (:h1 ,title)
              ,@body))))))

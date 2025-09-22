@@ -14,7 +14,7 @@
 (ql:quickload :str)
 
 (defun generate-toc ()
-  (with-page-output (:filename "index.html" :title "Publications" :directory *publication-output-directory*)
+  (with-page-output (:filename "index.html" :title "Publications" :subtitle *author-name* :directory *publication-output-directory*)
     (let ((last-year))
       (dolist (publication (stable-sort (copy-list *publications*) #'> :key (lambda (x) (getf x :year))))
         (destructuring-bind (&key title year publisher &allow-other-keys) publication
@@ -34,7 +34,7 @@
       (let ((pdf (auxiliary-file publication "pdf"))
             (image (or (auxiliary-file publication "png") (auxiliary-file publication "jpg")))
             (links (getf-all publication :link)))
-        (with-page-output (:filename (abstract-filename publication) :title title :directory *publication-output-directory*
+        (with-page-output (:filename (abstract-filename publication) :title title :subtitle (write-to-string year) :directory *publication-output-directory*
                            :additional-headers ((dolist (biblio-tag (biblio-tags publication))
                                                   (:meta :name (car biblio-tag) :content (cdr biblio-tag)))))
           (:p :class "abstract-citation" ; 'normal' citation format
