@@ -1,5 +1,5 @@
 ; Generate an HTML publication list
-; mjn, 2017-2023
+; mjn, 2017-2025
 
 ; Note: Like bibtex2web, does some magic with other files found in the output
 ; directory named from the basename of the citation key (see function
@@ -88,6 +88,7 @@
   "Bibliographic info that Google Scholar wants in meta tags."
   (let ((tags
           `(("citation_title" . ,(getf publication :title))
+            ("citation_doi" . ,(getf publication :doi))
             ,@(mapcar (lambda (x) `("citation_author" . ,x)) (getf publication :author))
             ("citation_publication_date" . ,(getf publication :year))
             ,@(let ((full-venue (publication-full-venue publication)))
